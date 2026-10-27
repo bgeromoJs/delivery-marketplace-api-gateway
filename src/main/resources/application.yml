@@ -1,0 +1,103 @@
+server:
+  port: 8080
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:deliveryhub-local-only-secret-key-change-before-deploy-2026}
+    issuer: deliveryhub-identity
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: identity-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/auth/**
+            - id: customer-service
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/customers/**
+            - id: store-catalog
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/store/me/dishes/**
+            - id: store-orders
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/store/me/orders/**
+            - id: store-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/store/**
+            - id: tenant-service
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/tenants/**
+            - id: catalog-service
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/catalog/**
+            - id: order-service
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/orders/**
+            # --- OpenAPI: um proxy por serviço para o Swagger UI agregado ---
+            - id: docs-identity
+              uri: http://localhost:8081
+              predicates:
+                - Path=/v3/api-docs/identity
+              filters:
+                - RewritePath=/v3/api-docs/identity, /v3/api-docs
+            - id: docs-tenant
+              uri: http://localhost:8082
+              predicates:
+                - Path=/v3/api-docs/tenant
+              filters:
+                - RewritePath=/v3/api-docs/tenant, /v3/api-docs
+            - id: docs-catalog
+              uri: http://localhost:8083
+              predicates:
+                - Path=/v3/api-docs/catalog
+              filters:
+                - RewritePath=/v3/api-docs/catalog, /v3/api-docs
+            - id: docs-order
+              uri: http://localhost:8084
+              predicates:
+                - Path=/v3/api-docs/order
+              filters:
+                - RewritePath=/v3/api-docs/order, /v3/api-docs
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    urls:
+      - name: Identity
+        url: /v3/api-docs/identity
+      - name: Tenant
+        url: /v3/api-docs/tenant
+      - name: Catalog
+        url: /v3/api-docs/catalog
+      - name: Order
+        url: /v3/api-docs/order
+
+logging:
+  level:
+    root: INFO # Nível padrão para toda a aplicação (pode usar DEBUG para mais detalhes)
+    com.seuprojeto: DEBUG # Substitua pelo pacote raiz do seu código (ex: com.deliveryhub.identity)
+    org.springframework.web: DEBUG # Mostra detalhes das requisições HTTP recebidas
+    org.hibernate.SQL: DEBUG # Exibe as queries SQL executadas no console (alternativa ao show-sql: true)
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE # Exibe os parâmetros que vão para o banco nas queries
